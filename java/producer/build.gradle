@@ -1,0 +1,36 @@
+plugins {
+  id 'java'
+  id 'org.jetbrains.kotlin.jvm' version '1.7.0'
+}
+
+group 'io.github.zckman'
+version '1.0.0'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.0"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-rx3:1.6.4"
+  implementation "io.reactivex.rxjava3:rxjava:3.0.0"
+}
+
+sourceSets {
+  main {
+    java {
+      srcDir 'java/producer/src'
+    }
+  }
+}
+
+compileJava {
+  options.encoding = 'UTF-8'
+  options.compilerArgs += ['-Xjdk-17']
+}
+
+compileKotlin {
+  kotlinOptions {
+    jvmTarget = '17'
+  }
+}

@@ -16,6 +16,8 @@ public class SmartDevice implements Observable<Object> {
     public SmartDevice() {
         this.subject = PublishSubject.create();
         this.observables = new HashMap<>();
+        this.mergeDisposable = Disposables.empty();
+
     }
 
     public void addObservable(String key, ObservableSource<Object> observable) {

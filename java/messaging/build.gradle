@@ -17,6 +17,8 @@ dependencies {
   implementation 'org.apache.kafka:kafka-clients:3.3.1'
   implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.0"
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-rx3:1.6.4"
+  implementation 'com.google.inject:guice:5.1.0'
+  implementation 'com.google.inject.extensions:guice-assistedinject:5.1.0'
 }
 
 sourceSets {

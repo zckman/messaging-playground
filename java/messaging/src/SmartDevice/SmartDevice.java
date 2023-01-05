@@ -1,4 +1,4 @@
-package io.github.zckman.messaging.producer.SmartDevice;
+package io.github.zckman.playground.messaging.SmartDevice;
 
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableSource;

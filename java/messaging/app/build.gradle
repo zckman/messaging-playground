@@ -30,7 +30,7 @@ dependencies {
 
 compileJava {
   options.encoding = 'UTF-8'
-  options.compilerArgs += ['-Xjdk-17']
+  options.release = 17
 }
 
 compileKotlin {

@@ -1,50 +1,70 @@
 package io.github.zckman.playground.messaging.SmartDevice;
 
+import io.github.zckman.playground.messaging.SmartDevice.Sensor.Measurement;
+import io.github.zckman.playground.messaging.SmartDevice.Sensor.Sensor;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableSource;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.subjects.PublishSubject;
-import io.reactivex.rxjava3.subjects.Subject;
+import io.reactivex.rxjava3.schedulers.Timed;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 
-public class SmartDevice implements Observable<Object> {
+public class SmartDevice {
 
-    private final Subject<Object> subject;
-    private final Map<String, ObservableSource<?>> observables;
-    private Disposable mergeDisposable;
+    public class SensorMeasurement<T extends Number> {
 
-    public SmartDevice() {
-        this.subject = PublishSubject.create();
-        this.observables = new HashMap<>();
-        this.mergeDisposable = Disposables.empty();
+        SmartDevice device;
+        String key;
+        Measurement<T> measurement;
 
-    }
+        public SensorMeasurement(SmartDevice device, String key, Measurement<T> value) {
+            this.device = device;
+            this.key = key;
+            this.measurement = value;
+        }
 
-    public void addObservable(String key, ObservableSource<Object> observable) {
-        observables.put(key, observable);
-        mergeObservables();
-    }
-
-    public ObservableSource<Object> getObservable(String key) {
-        return observables.get(key);
-    }
-
-    private void mergeObservables() {
-        sync subject, observables;
-        {
-            ObservableSource<> mergedObservable = Observable.merge(observables.values());
-
-            // Unsubscribe from the old mergedObservable
-            mergeDisposable.dispose();
-            // subscribe to the new one
-            mergeDisposable = mergedObservable.subscribe(subject);
+        public Measurement<T> getMeasurement() {
+            return measurement;
         }
     }
 
-    @Override
-    public void subscribe(Observer<Object> observer) {
-        subject.subscribe(observer);
+
+    private Map<String, Sensor<Number>> sensors;
+
+    public SmartDevice(Map<String, Sensor<Number>> sensors) {
+        this.sensors = sensors;
+    }
+
+    /**
+     * Creates an {@link Observable} that transforms a {@link Measurement} into a {@link SensorMeasurement}
+     * and wraps it with a timestamp
+     * @param key a key like "temperature"
+     * @param sensor a Sensor
+     * @return the Observable
+     */
+    private Observable<Timed<SensorMeasurement<Number>>> enrich(String key, Sensor<Number> sensor) {
+        Observable<Measurement<Number>> observable = Observable.wrap(sensor);
+        return observable.map((Measurement<Number> m) -> new SensorMeasurement<>(this, key, m)).timestamp();
+    };
+
+    public Set<String> getSensorKeys(){
+        return sensors.keySet();
+    }
+
+    /**
+     * Adds a reference to this device and a key like temperature.
+     * All values will be timestamped
+     */
+    public Observable<Timed<SensorMeasurement<Number>>> getSensor(String key){
+        if (!sensors.containsKey(key)) {
+            throw new IllegalArgumentException("No such key: " + key);
+        }
+        return enrich(key, sensors.get(key));
+    }
+
+    public List<Observable<Timed<SensorMeasurement<Number>>>> getSensors(){
+        return this.sensors.entrySet().stream().map(
+            (Map.Entry<String, Sensor<Number>> e) -> enrich(e.getKey(), e.getValue())
+        ).toList();
     }
 }

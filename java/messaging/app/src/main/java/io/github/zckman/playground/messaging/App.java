@@ -5,8 +5,10 @@ import io.github.zckman.playground.messaging.Kafka.KafkaServerObservableFactory;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.subjects.ReplaySubject;
 import org.apache.kafka.clients.ClientDnsLookup;
+import org.apache.kafka.clients.producer.KafkaProducer;
 
 import java.net.InetSocketAddress;
+import java.util.Properties;
 
 public class App {
     public static void main(String[] args) {
@@ -26,6 +28,23 @@ public class App {
 
         // Subscribe to the Observable and print the server address when it becomes available
         availableServer.subscribe(serverAddress -> System.out.println("Kafka server is online: " + serverAddress.getHostString()));
+
+        // Create and emit a KafkaProducer when Servers are available
+        // TODO: Decide on actual message type
+        ReplaySubject<KafkaProducer<String, String>> kafkaProducerSubject = ReplaySubject.createWithSize(1);
+
+        availableServer.map(serverAddress -> {
+            // Create a KafkaProducer with the server address
+            Properties props = new Properties();
+            // We could add all the servers here not just the first reachable
+            props.put("bootstrap.servers", serverAddress.getHostString());
+            // TODO: Add additional properties here?
+            return new KafkaProducer<String, String>(props);
+        }).subscribe(kafkaProducerSubject);
+
+        kafkaProducerSubject.subscribe(kafkaProducer -> {
+            // Do something with the KafkaProducer
+        });
 
     }
 }

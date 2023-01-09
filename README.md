@@ -19,4 +19,5 @@ You can interact with the messaging playground using any client that supports th
 
 ## Future Development
 
-In the future, I plan to add support for additional messaging protocols and to integrate the message broker with the simulated smart home devices. I also plan to add monitoring and management features to make it easier to administer the message broker. This project is purely for experimentation and learning purposes and is not intended for practical use.
+In the future, I plan to add support for additional messaging protocol.  
+This project is purely for experimentation and learning purposes and is not intended for practical use.

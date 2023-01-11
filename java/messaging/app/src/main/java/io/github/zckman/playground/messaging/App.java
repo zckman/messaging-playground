@@ -80,7 +80,7 @@ public class App {
             )
         );
 
-        return Arrays.asList(new SmartDevice[]{kitchen, bedroom, outside});
+        return Arrays.asList(kitchen, bedroom, outside);
     }
 
     public static void keepRunning() throws InterruptedException {

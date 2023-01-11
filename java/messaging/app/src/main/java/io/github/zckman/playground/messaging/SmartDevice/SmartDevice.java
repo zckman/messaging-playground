@@ -3,11 +3,9 @@ package io.github.zckman.playground.messaging.SmartDevice;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.Measurement;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.Sensor;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableSource;
 import io.reactivex.rxjava3.schedulers.Timed;
 
 import java.util.*;
-import java.util.function.Function;
 
 public class SmartDevice {
 
@@ -29,9 +27,16 @@ public class SmartDevice {
     }
 
 
-    private Map<String, Sensor<Number>> sensors;
+    private String id;
+    private Map<String, Sensor<? extends Number>> sensors;
 
-    public SmartDevice(Map<String, Sensor<Number>> sensors) {
+    /**
+     *
+     * @param id an unique device id
+     * @param sensors all sensors for the device
+     */
+    public SmartDevice(String id, Map<String, Sensor<? extends Number>> sensors) {
+        this.id = id;
         this.sensors = sensors;
     }
 
@@ -66,5 +71,9 @@ public class SmartDevice {
         return this.sensors.entrySet().stream().map(
             (Map.Entry<String, Sensor<Number>> e) -> enrich(e.getKey(), e.getValue())
         ).toList();
+    }
+
+    public String getId() {
+        return id;
     }
 }

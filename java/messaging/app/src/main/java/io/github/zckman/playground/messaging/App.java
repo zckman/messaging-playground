@@ -2,13 +2,19 @@ package io.github.zckman.playground.messaging;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.zckman.playground.messaging.Kafka.KafkaServerObservableFactory;
+import io.github.zckman.playground.messaging.SmartDevice.Sensor.Fake.FakeSensorFactory;
+import io.github.zckman.playground.messaging.SmartDevice.SmartDevice;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.subjects.ReplaySubject;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.producer.KafkaProducer;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public class App {
     public static void main(String[] args) {
@@ -16,6 +22,9 @@ public class App {
         // TODO: ensure .env is in the current working directory
         // TODO: maybe allow setting an alternate path
         Dotenv dotenv = Dotenv.load();
+
+        // Create some fake devices
+        List<SmartDevice> devices = createDevices();
 
         // Get the bootstrap servers
         String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");
@@ -46,5 +55,31 @@ public class App {
             // Do something with the KafkaProducer
         });
 
+    }
+
+    public static List<SmartDevice> createDevices() {
+        SmartDevice kitchen = new SmartDevice(
+                "kitchen.climate", Map.of(
+                "temperature", FakeSensorFactory.createTemperatureSensor(5, TimeUnit.SECONDS, 0.1, 18, 25),
+                "relative humidity", FakeSensorFactory.createRelativeHumiditySensor(5, TimeUnit.SECONDS, 1, 40, 80),
+                "air pressure", FakeSensorFactory.createAirPressureSensor(5, TimeUnit.SECONDS, 1, 1000, 1025)
+            )
+        );
+        SmartDevice bedroom = new SmartDevice(
+                "bedroom.climate", Map.of(
+                "temperature", FakeSensorFactory.createTemperatureSensor(5, TimeUnit.SECONDS, 0.1, 18, 25),
+                "relative humidity", FakeSensorFactory.createRelativeHumiditySensor(5, TimeUnit.SECONDS, 1, 40, 80),
+                "air pressure", FakeSensorFactory.createAirPressureSensor(5, TimeUnit.SECONDS, 1, 1000, 1025)
+            )
+        );
+        SmartDevice outside = new SmartDevice(
+                "outside.climate", Map.of(
+                "temperature", FakeSensorFactory.createTemperatureSensor(5, TimeUnit.SECONDS, 0.1, 4, 16),
+                "relative humidity", FakeSensorFactory.createRelativeHumiditySensor(5, TimeUnit.SECONDS, 1, 40, 80),
+                "air pressure", FakeSensorFactory.createAirPressureSensor(5, TimeUnit.SECONDS, 1, 1000, 1025)
+            )
+        );
+
+        return Arrays.asList(new SmartDevice[]{kitchen, bedroom, outside});
     }
 }

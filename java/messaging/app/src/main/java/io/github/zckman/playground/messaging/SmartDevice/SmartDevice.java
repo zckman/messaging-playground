@@ -9,33 +9,33 @@ import java.util.*;
 
 public class SmartDevice {
 
-    public class SensorMeasurement<T extends Number> {
+    public static class SensorMeasurement {
 
         SmartDevice device;
         String key;
-        Measurement<T> measurement;
+        Measurement<Double> measurement;
 
-        public SensorMeasurement(SmartDevice device, String key, Measurement<T> value) {
+        public SensorMeasurement(SmartDevice device, String key, Measurement<Double> value) {
             this.device = device;
             this.key = key;
             this.measurement = value;
         }
 
-        public Measurement<T> getMeasurement() {
+        public Measurement<Double> getMeasurement() {
             return measurement;
         }
     }
 
 
     private String id;
-    private Map<String, Sensor<? extends Number>> sensors;
+    private Map<String, Sensor<Double>> sensors;
 
     /**
      *
      * @param id an unique device id
      * @param sensors all sensors for the device
      */
-    public SmartDevice(String id, Map<String, Sensor<? extends Number>> sensors) {
+    public SmartDevice(String id, Map<String, Sensor<Double>> sensors) {
         this.id = id;
         this.sensors = sensors;
     }
@@ -47,9 +47,9 @@ public class SmartDevice {
      * @param sensor a Sensor
      * @return the Observable
      */
-    private Observable<Timed<SensorMeasurement<Number>>> enrich(String key, Sensor<Number> sensor) {
-        Observable<Measurement<Number>> observable = Observable.wrap(sensor);
-        return observable.map((Measurement<Number> m) -> new SensorMeasurement<>(this, key, m)).timestamp();
+    private Observable<Timed<SensorMeasurement>> enrich(String key, Sensor<Double> sensor) {
+        Observable<Measurement<Double>> observable = Observable.wrap(sensor);
+        return observable.map((Measurement<Double> m) -> new SensorMeasurement(this, key, m)).timestamp();
     };
 
     public Set<String> getSensorKeys(){
@@ -60,16 +60,16 @@ public class SmartDevice {
      * Adds a reference to this device and a key like temperature.
      * All values will be timestamped
      */
-    public Observable<Timed<SensorMeasurement<Number>>> getSensor(String key){
+    public Observable<Timed<SensorMeasurement>> getSensor(String key){
         if (!sensors.containsKey(key)) {
             throw new IllegalArgumentException("No such key: " + key);
         }
         return enrich(key, sensors.get(key));
     }
 
-    public List<Observable<Timed<SensorMeasurement<Number>>>> getSensors(){
+    public List<Observable<Timed<SensorMeasurement>>> getSensors(){
         return this.sensors.entrySet().stream().map(
-            (Map.Entry<String, Sensor<Number>> e) -> enrich(e.getKey(), e.getValue())
+            (Map.Entry<String, Sensor<Double>> e) -> enrich(e.getKey(), e.getValue())
         ).toList();
     }
 

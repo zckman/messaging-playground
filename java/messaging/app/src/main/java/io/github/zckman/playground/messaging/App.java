@@ -17,7 +17,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 public class App {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // Load environment variables from .env file
         // TODO: ensure .env is in the current working directory
         // TODO: maybe allow setting an alternate path
@@ -55,6 +55,7 @@ public class App {
             // Do something with the KafkaProducer
         });
 
+        keepRunning();
     }
 
     public static List<SmartDevice> createDevices() {
@@ -81,5 +82,21 @@ public class App {
         );
 
         return Arrays.asList(new SmartDevice[]{kitchen, bedroom, outside});
+    }
+
+    public static void keepRunning() throws InterruptedException {
+        Thread thread = new Thread(() -> {
+            while (true) {
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+        thread.join();
     }
 }

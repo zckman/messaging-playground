@@ -26,16 +26,18 @@ public class App {
         List<SmartDevice> devices = createDevices();
 
         // Get the bootstrap servers
-        String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");
+        final String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");
 
         // Create an Observable that emits the address of a Kafka server as soon as it becomes available
+        // We use this Observable to wait until one server is up but will use the original bootstrapServers string later
         Observable<InetSocketAddress> serverObservable = KafkaServerObservableFactory.create(bootstrapServers, ClientDnsLookup.USE_ALL_DNS_IPS, 1000);
-        // Create a ReplaySubject to always get the latest server on subscribe
+
+        // Create a ReplaySubject to always get the latest servers on subscribe
         ReplaySubject<InetSocketAddress> availableServer = ReplaySubject.createWithSize(1);
         serverObservable.subscribe(availableServer);
 
         // Subscribe to the Observable and print the server address when it becomes available
-        availableServer.subscribe(serverAddress -> System.out.println("Kafka server is online: " + serverAddress.getHostString()));
+        availableServer.subscribe(serverAddress -> System.out.println("Kafka server is online: " + serverAddress));
 
         // Create and emit a KafkaProducer when Servers are available
         // TODO: Decide on actual message type
@@ -44,8 +46,8 @@ public class App {
         availableServer.map(serverAddress -> {
             // Create a KafkaProducer with the server address
             Properties props = new Properties();
-            // We could add all the servers here not just the first reachable
-            props.put("bootstrap.servers", serverAddress.getHostString());
+            // We add the servers not just the first reachable
+            props.put("bootstrap.servers", bootstrapServers);
             props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             return new KafkaProducer<String, String>(props);

@@ -39,7 +39,7 @@ compileKotlin {
 
 application {
     // Define the main class for the application.
-    // mainClass = 'io.github.zckman.playground.messaging.App'
+    mainClass = 'io.github.zckman.playground.messaging.App'
 }
 
 tasks.named('test') {

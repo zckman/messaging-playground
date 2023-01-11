@@ -12,5 +12,8 @@ public class Switch {
     public void off() {
         subject.onNext(false);
     }
+    public io.reactivex.rxjava3.core.Observable<Boolean> asObservable() {
+        return subject;
+    }
 }
 

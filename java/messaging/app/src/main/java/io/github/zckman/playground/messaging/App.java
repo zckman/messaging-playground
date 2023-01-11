@@ -46,7 +46,8 @@ public class App {
             Properties props = new Properties();
             // We could add all the servers here not just the first reachable
             props.put("bootstrap.servers", serverAddress.getHostString());
-            // TODO: Add additional properties here?
+            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             return new KafkaProducer<String, String>(props);
         }).subscribe(kafkaProducerSubject);
 

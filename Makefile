@@ -28,14 +28,13 @@ broker:
 broker-ready:
 	sleep 10s
 
-
 .PHONY: create-topics
 create-topics: broker-ready create-device-topic create-sensors-topic
 
 .PHONY: create-device-topics
 create-device-topic:
 	docker-compose exec kafka \
-	kafka-topics --create --topic SmartDevices \
+	kafka-topics --create --topic ${TOPIC_SMART_DEVICES} \
 	--partitions 1 \
 	--replication-factor 1 \
 	--if-not-exists \
@@ -44,7 +43,7 @@ create-device-topic:
 
 create-sensors-topic:
 	docker-compose exec kafka \
-	kafka-topics --create --topic Sensors \
+	kafka-topics --create --topic ${TOPIC_SENSORS} \
 	--partitions 1 \
 	--replication-factor 1 \
 	--if-not-exists \

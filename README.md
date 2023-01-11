@@ -19,5 +19,5 @@ You can interact with the messaging playground using any client that supports th
 
 ## Future Development
 
-In the future, I plan to add support for additional messaging protocol.  
+In the future, I plan to add support for additional messaging protocols.  
 This project is purely for experimentation and learning purposes and is not intended for practical use.

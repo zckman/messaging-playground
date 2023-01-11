@@ -1,6 +1,7 @@
 package io.github.zckman.playground.messaging;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
 import io.github.zckman.playground.messaging.Kafka.KafkaServerObservableFactory;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.Fake.FakeSensorFactory;
 import io.github.zckman.playground.messaging.SmartDevice.SmartDevice;
@@ -19,9 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class App {
     public static void main(String[] args) throws InterruptedException {
         // Load environment variables from .env file
-        // TODO: ensure .env is in the current working directory
-        // TODO: maybe allow setting an alternate path
-        Dotenv dotenv = Dotenv.load();
+        Dotenv dotenv = (new DotenvBuilder()).ignoreIfMissing().load();
 
         // Create some fake devices
         List<SmartDevice> devices = createDevices();

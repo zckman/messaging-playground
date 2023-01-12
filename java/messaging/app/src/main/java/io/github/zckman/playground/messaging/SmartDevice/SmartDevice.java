@@ -11,14 +11,25 @@ public class SmartDevice {
 
     public static class SensorMeasurement {
 
-        SmartDevice device;
+        String deviceId;
         String key;
         Measurement<Double> measurement;
 
         public SensorMeasurement(SmartDevice device, String key, Measurement<Double> value) {
-            this.device = device;
+            this(device.getId(), key, value);
+        }
+        public SensorMeasurement(String deviceId, String key, Measurement<Double> value) {
+            this.deviceId = deviceId;
             this.key = key;
             this.measurement = value;
+        }
+
+        public String getDeviceId() {
+            return deviceId;
+        }
+
+        public String getKey() {
+            return key;
         }
 
         public Measurement<Double> getMeasurement() {

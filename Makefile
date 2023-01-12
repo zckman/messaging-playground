@@ -34,7 +34,8 @@ create-topics: broker-ready create-device-topic create-sensors-topic
 
 .PHONY: create-device-topics
 create-device-topic:
-	docker-compose exec kafka \
+	@echo "*** Ensuring topic \"${TOPIC_SMART_DEVICES}\" exists"
+	@docker-compose exec kafka \
 	kafka-topics --create --topic ${TOPIC_SMART_DEVICES} \
 	--partitions 1 \
 	--replication-factor 1 \
@@ -44,7 +45,8 @@ create-device-topic:
 
 .PHONY: create-sensors-topic
 create-sensors-topic:
-	docker-compose exec kafka \
+	@echo "*** Ensuring topic \"${TOPIC_SENSORS}\" exists"
+	@docker-compose exec kafka \
 	kafka-topics --create --topic ${TOPIC_SENSORS} \
 	--partitions 1 \
 	--replication-factor 1 \

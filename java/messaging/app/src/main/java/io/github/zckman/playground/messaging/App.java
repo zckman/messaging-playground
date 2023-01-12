@@ -1,5 +1,7 @@
 package io.github.zckman.playground.messaging;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvBuilder;
 import io.github.zckman.playground.messaging.Kafka.KafkaServerObservableFactory;
@@ -9,6 +11,7 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.subjects.ReplaySubject;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -43,7 +46,6 @@ public class App {
         availableServer.subscribe(serverAddress -> System.out.println("Kafka server is online: " + serverAddress));
 
         // Create and emit a KafkaProducer when Servers are available
-        // TODO: Decide on actual message type
         ReplaySubject<KafkaProducer<String, String>> kafkaProducerSubject = ReplaySubject.createWithSize(1);
 
         availableServer.map(serverAddress -> {
@@ -57,7 +59,35 @@ public class App {
         }).subscribe(kafkaProducerSubject);
 
         kafkaProducerSubject.subscribe(kafkaProducer -> {
-            // Do something with the KafkaProducer
+            // Subscribe producers to the devices
+            ObjectMapper mapper = new ObjectMapper();
+            deviceListObservable.map(devices -> {
+                // Create JSON like [{id, [keys]}, ...]
+                JsonNode node = mapper.valueToTree(
+                        devices.stream().map(device -> Map.of(device.getId(), device.getSensorKeys())).toList()
+                );
+                return node;
+            }).subscribe((JsonNode node) -> {
+                String json = mapper.writeValueAsString(node);
+
+                ProducerRecord<String, String> record = new ProducerRecord<>(topicSmartDevices, "devices", json);
+                kafkaProducer.send(record);
+            });
+
+            // Flatten all Sensors and merge them
+            Observable.merge(
+                    devicesObservable.flatMap(smartDevice -> Observable.fromIterable(smartDevice.getSensors()))
+            ).subscribe(sensorMeasurementTimed -> {
+                SmartDevice.SensorMeasurement measurement = sensorMeasurementTimed.value();
+                String key = measurement.getDeviceId() + "." + measurement.getKey();
+
+                String json = mapper.writeValueAsString(
+                        Map.of("timestamp", sensorMeasurementTimed.time(), "measurement", measurement)
+                );
+
+                ProducerRecord<String, String> record = new ProducerRecord<>(topicSensors, key, json);
+                kafkaProducer.send(record);
+            });
         });
 
         keepRunning();
@@ -69,21 +99,21 @@ public class App {
                 "temperature", FakeSensorFactory.createTemperatureSensor(5, TimeUnit.SECONDS, 0.1, 18, 25),
                 "relative humidity", FakeSensorFactory.createRelativeHumiditySensor(5, TimeUnit.SECONDS, 1, 40, 80),
                 "air pressure", FakeSensorFactory.createAirPressureSensor(5, TimeUnit.SECONDS, 1, 1000, 1025)
-            )
+        )
         );
         SmartDevice bedroom = new SmartDevice(
                 "bedroom.climate", Map.of(
                 "temperature", FakeSensorFactory.createTemperatureSensor(5, TimeUnit.SECONDS, 0.1, 18, 25),
                 "relative humidity", FakeSensorFactory.createRelativeHumiditySensor(5, TimeUnit.SECONDS, 1, 40, 80),
                 "air pressure", FakeSensorFactory.createAirPressureSensor(5, TimeUnit.SECONDS, 1, 1000, 1025)
-            )
+        )
         );
         SmartDevice outside = new SmartDevice(
                 "outside.climate", Map.of(
                 "temperature", FakeSensorFactory.createTemperatureSensor(5, TimeUnit.SECONDS, 0.1, 4, 16),
                 "relative humidity", FakeSensorFactory.createRelativeHumiditySensor(5, TimeUnit.SECONDS, 1, 40, 80),
                 "air pressure", FakeSensorFactory.createAirPressureSensor(5, TimeUnit.SECONDS, 1, 1000, 1025)
-            )
+        )
         );
 
         return Arrays.asList(kitchen, bedroom, outside);

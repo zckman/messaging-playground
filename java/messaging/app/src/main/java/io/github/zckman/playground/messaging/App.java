@@ -23,7 +23,8 @@ public class App {
         Dotenv dotenv = (new DotenvBuilder()).ignoreIfMissing().load();
 
         // Create some fake devices
-        List<SmartDevice> devices = createDevices();
+        Observable<List<SmartDevice>> deviceListObservable = Observable.just(createDevices());
+        Observable<SmartDevice> devicesObservable = deviceListObservable.flatMap(Observable::fromIterable);
 
         // Get the bootstrap servers
         final String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");

@@ -26,8 +26,10 @@ public class App {
         Observable<List<SmartDevice>> deviceListObservable = Observable.just(createDevices());
         Observable<SmartDevice> devicesObservable = deviceListObservable.flatMap(Observable::fromIterable);
 
-        // Get the bootstrap servers
+        // Get the bootstrap servers and topic names
         final String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");
+        final String topicSensors = dotenv.get("TOPIC_SENSORS");
+        final String topicSmartDevices = dotenv.get("TOPIC_SMART_DEVICES");
 
         // Create an Observable that emits the address of a Kafka server as soon as it becomes available
         // We use this Observable to wait until one server is up but will use the original bootstrapServers string later

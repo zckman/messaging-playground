@@ -63,8 +63,9 @@ listen-topic:
 .PHONY: show-topic
 show-topic:
 	@echo "*** Listing topic \"${TOPIC}\""
+	@echo "    Note: There will be a timeout exception. This is normal."
 	@docker-compose exec kafka \
-	kafka-console-consumer --bootstrap-server ${KAFKA_BOOTSTRAP_SERVERS} --topic ${TOPIC} --from-beginning --once
+	kafka-console-consumer --bootstrap-server ${KAFKA_BOOTSTRAP_SERVERS} --topic ${TOPIC} --from-beginning --timeout-ms 5000
 
 :PHONY: observe
 observe:

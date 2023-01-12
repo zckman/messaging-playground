@@ -14,7 +14,8 @@ docker-compose-down:
 	docker-compose down
 
 .PHONY: logs
-logs: docker-compose logs
+logs:
+	docker-compose logs
 
 .PHONY: broker
 broker:
@@ -41,6 +42,7 @@ create-device-topic:
 	--bootstrap-server ${KAFKA_BOOTSTRAP_SERVERS} \
 	--config cleanup.policy=compact
 
+.PHONY: create-sensors-topic
 create-sensors-topic:
 	docker-compose exec kafka \
 	kafka-topics --create --topic ${TOPIC_SENSORS} \

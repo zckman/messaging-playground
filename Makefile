@@ -51,3 +51,20 @@ create-sensors-topic:
 	--if-not-exists \
 	--bootstrap-server ${KAFKA_BOOTSTRAP_SERVERS} \
 	--config retention.ms=86400000
+
+.PHONY: listen-topic
+listen-topic:
+	@echo "*** Listening to topic \"${TOPIC}\""
+	@docker-compose exec kafka \
+	kafka-console-consumer --bootstrap-server ${KAFKA_BOOTSTRAP_SERVERS} --topic ${TOPIC}
+
+.PHONY: show-topic
+show-topic:
+	@echo "*** Listing topic \"${TOPIC}\""
+	@docker-compose exec kafka \
+	kafka-console-consumer --bootstrap-server ${KAFKA_BOOTSTRAP_SERVERS} --topic ${TOPIC} --from-beginning --once
+
+:PHONY: observe
+observe:
+	@make show-topic TOPIC=${TOPIC_SMART_DEVICES}
+	@make listen-topic TOPIC=${TOPIC_SENSORS}

@@ -3,24 +3,45 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT}
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - 22181:2181
+      - ${ZOOKEEPER_CLIENT_PORT}:${ZOOKEEPER_CLIENT_PORT}
   
   kafka:
     image: confluentinc/cp-kafka:latest
     depends_on:
       - zookeeper
     ports:
-      - 29092:29092
+      - ${KAFKA_PORT}:${KAFKA_PORT}
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_CLIENT_PORT}
       KAFKA_ADVERTISED_LISTENERS: ${KAFKA_BOOTSTRAP_SERVERS}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafka-rest:
+    image: confluentinc/cp-kafka-rest:latest
+    depends_on:
+      - kafka
+    ports:
+      - ${KAFKA_REST_PORT}:${KAFKA_REST_PORT}
+    environment:
+      KAFKA_REST_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_REST_LISTENERS: http://0.0.0.0:${KAFKA_REST_PORT}
+      KAFKA_REST_SCHEMA_REGISTRY_URL: http://schema-registry:${SCHEMA_REGISTRY_PORT}
+
+  schema-registry:
+      image: confluentinc/cp-schema-registry:latest
+      ports:
+        - ${SCHEMA_REGISTRY_PORT}:${SCHEMA_REGISTRY_PORT}
+      environment:
+        SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zookeeper:${ZOOKEEPER_CLIENT_PORT}"
+        SCHEMA_REGISTRY_HOST_NAME: schema-registry
+        SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:${SCHEMA_REGISTRY_PORT}
+
 
   messaging:
     build: ./java/messaging

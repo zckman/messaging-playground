@@ -1,7 +1,7 @@
 include .env
 
 .PHONY: up stop down build
-up: docker-compose-up create-topics
+up: docker-compose-up create-topics build-vite
 stop: docker-compose-stop
 down: docker-compose-down
 build: docker-compose-build
@@ -74,3 +74,11 @@ show-topic:
 observe:
 	@make show-topic TOPIC=${TOPIC_SMART_DEVICES}
 	@make listen-topic TOPIC=${TOPIC_SENSORS}
+
+.PHONY: build-vite
+build-vite:
+	@if docker-compose ps -q vite; then \
+		docker-compose exec vite npx vite build; \
+	else \
+		docker-compose run --rm vite npx vite build; \
+	fi

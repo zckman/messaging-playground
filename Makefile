@@ -70,7 +70,7 @@ show-topic:
 	@docker-compose exec kafka \
 	kafka-console-consumer --bootstrap-server ${KAFKA_BOOTSTRAP_SERVERS} --topic ${TOPIC} --from-beginning --timeout-ms 5000
 
-:PHONY: observe
+.PHONY: observe
 observe:
 	@make show-topic TOPIC=${TOPIC_SMART_DEVICES}
 	@make listen-topic TOPIC=${TOPIC_SENSORS}

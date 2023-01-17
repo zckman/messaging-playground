@@ -62,7 +62,8 @@ services:
   vite:
     build: ./consumer/vite/
     volumes:
-      - .:/app
+      - ./consumer/vite:/app
+      - ./consumer/public:/app/dist
     ports:
       - ${VITE_PORT}:5137
     environment:

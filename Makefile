@@ -77,8 +77,8 @@ observe:
 
 .PHONY: build-vite
 build-vite:
-	@if docker-compose ps -q vite; then \
-		docker-compose exec vite npx vite build; \
-	else \
-		docker-compose run --rm vite npx vite build; \
-	fi
+ifneq ($(shell docker-compose ps -q --status "running" vite),)
+	docker-compose exec vite sh -c "npx vite build"
+else
+	docker-compose run --rm vite sh -c "npx vite build"
+endif

@@ -1,7 +1,7 @@
 include .env
 
 .PHONY: up stop down build
-up: docker-compose-up create-topics build-vite
+up: docker-compose-up create-topics build-vite help
 stop: docker-compose-stop
 down: docker-compose-down
 build: docker-compose-build
@@ -82,3 +82,7 @@ ifneq ($(shell docker-compose ps -q --status "running" vite),)
 else
 	docker-compose run --rm vite sh -c "npx vite build"
 endif
+
+.PHONY: help
+help:
+	@echo "Consumer: https://localhost:${HTTPS_PORT}"

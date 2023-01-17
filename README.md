@@ -40,6 +40,11 @@ You can interact with the messaging playground using any client that supports th
 
 You can use `make observe` to print the current Devices from the `SmartDevices` topic and start listening for sensor readings.
 
+### Vue.js consumer (WIP)
+
+https://localhost:20443
+It does nothing at the moment
+
 ## Future Development
 
 In the future, I plan to build a simple client that may interact with Kafkas REST Api.  

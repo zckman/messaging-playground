@@ -58,3 +58,12 @@ services:
     volumes:
       - ./public:/app/public
       - ./nginx.conf:/etc/nginx/nginx.conf
+
+  vite:
+    build: ./consumer/vite/
+    volumes:
+      - .:/app
+    ports:
+      - ${VITE_PORT}:5137
+    environment:
+      VITE_SERVER_WATCH_USE_POLLING: ${VITE_SERVER_WATCH_USE_POLLING}

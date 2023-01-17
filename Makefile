@@ -30,7 +30,7 @@ broker:
 
 .PHONY: broker-ready
 broker-ready:
-	sleep 10s
+	sleep 10s || timeout /t 10 /nobreak
 
 .PHONY: create-topics
 create-topics: broker-ready create-device-topic create-sensors-topic

@@ -56,4 +56,7 @@ services:
     ports:
       - ${VITE_PORT}:5137
     environment:
+      KAFKA_REST_URL: http://localhost:${KAFKA_REST_PORT}
+      TOPIC_SENSORS: ${TOPIC_SENSORS}
+      TOPIC_SMART_DEVICES: ${TOPIC_SMART_DEVICES}
       VITE_SERVER_WATCH_USE_POLLING: ${VITE_SERVER_WATCH_USE_POLLING}

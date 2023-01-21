@@ -9,7 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/rx": "^4.1.2",
     "kafka-rest": "^0.0.5",
+    "rxjs": "^7.8.0",
     "vue": "^3.2.45"
   },
   "devDependencies": {

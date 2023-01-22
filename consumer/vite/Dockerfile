@@ -8,6 +8,6 @@ COPY package.json package-lock.json ./
 RUN set -eux ; \
     npm install && \
     npm cache --force clean && \
-    rm -rf /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ;
 
 CMD ["npm", "run", "dev", "--", "--https"]

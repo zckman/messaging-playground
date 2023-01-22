@@ -10,4 +10,4 @@ RUN set -eux ; \
     npm cache --force clean && \
     rm -rf /tmp/* /var/tmp/*
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--https"]

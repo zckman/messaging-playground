@@ -30,7 +30,8 @@ broker:
 
 .PHONY: broker-ready
 broker-ready:
-	sleep 10s || timeout /t 10 /nobreak
+	@echo "Waiting 10 seconds for start up"
+	@sleep 10s || timeout /t 10 /nobreak
 
 .PHONY: create-topics
 create-topics: broker-ready create-device-topic create-sensors-topic
@@ -78,11 +79,12 @@ observe:
 .PHONY: build-vite
 build-vite:
 ifneq ($(shell docker-compose ps -q --status "running" vite),)
-	docker-compose exec vite sh -c "npx vite build"
+	@docker-compose exec vite sh -c "npx vite build"
 else
-	docker-compose run --rm vite sh -c "npx vite build"
+	@docker-compose run --rm vite sh -c "npx vite build"
 endif
 
 .PHONY: help
 help:
 	@echo "Consumer: https://localhost:${HTTPS_PORT}"
+	@echo "Consumer Vite Dev: https://localhost:${VITE_PORT}"

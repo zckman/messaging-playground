@@ -1,4 +1,5 @@
 declare module 'kafka-rest' {
+    export function client(config: ClientConfig)
     export interface Message {
         key: string | null;
         value: any;

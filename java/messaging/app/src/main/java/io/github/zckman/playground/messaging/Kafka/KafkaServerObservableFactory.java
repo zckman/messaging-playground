@@ -40,21 +40,20 @@ public class KafkaServerObservableFactory {
      */
     private static InetSocketAddress getKafkaServerAddress(String bootstrapServers, ClientDnsLookup clientDnsLookup, int timeoutMillis) {
         // Create a list of observables that check if each server is online
-//        List<Observable<String>> observables = new ArrayList<>();
         List<String> servers = Arrays.asList(bootstrapServers.split(","));
         List<InetSocketAddress> addresses = ClientUtils.parseAndValidateAddresses(servers, clientDnsLookup);
         List<Observable<InetSocketAddress>> observables = addresses.stream().map((address) -> {
-                    Observable<InetSocketAddress> observable = Observable.fromCallable(() -> {
-                        try {
-                            if (address.getAddress().isReachable(timeoutMillis)) {
-                                return address;
-                            } else {
-                                return null;
-                            }
-                        } catch (IOException e) {
-                            return null;
-                        }
-                    });
+            Observable<InetSocketAddress> observable = Observable.fromCallable(() -> {
+                try {
+                    if (address.getAddress().isReachable(timeoutMillis)) {
+                        return address;
+                    } else {
+                        return null;
+                    }
+                } catch (IOException e) {
+                    return null;
+                }
+            });
             return observable;
         }).toList();
 

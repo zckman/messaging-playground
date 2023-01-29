@@ -7,13 +7,12 @@ import io.github.cdimascio.dotenv.DotenvBuilder;
 import io.github.zckman.playground.messaging.Kafka.KafkaServerObservableFactory;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.Fake.FakeSensorFactory;
 import io.github.zckman.playground.messaging.SmartDevice.SmartDevice;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.subjects.ReplaySubject;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -34,29 +33,7 @@ public class App {
         final String topicSensors = dotenv.get("TOPIC_SENSORS");
         final String topicSmartDevices = dotenv.get("TOPIC_SMART_DEVICES");
 
-        // Create an Observable that emits the address of a Kafka server as soon as it becomes available
-        // We use this Observable to wait until one server is up but will use the original bootstrapServers string later
-        Observable<InetSocketAddress> serverObservable = KafkaServerObservableFactory.create(bootstrapServers, ClientDnsLookup.USE_ALL_DNS_IPS, 1000);
-
-        // Create a ReplaySubject to always get the latest servers on subscribe
-        ReplaySubject<InetSocketAddress> availableServer = ReplaySubject.createWithSize(1);
-        serverObservable.subscribe(availableServer);
-
-        // Subscribe to the Observable and print the server address when it becomes available
-        availableServer.subscribe(serverAddress -> System.out.println("Kafka server is online: " + serverAddress));
-
-        // Create and emit a KafkaProducer when Servers are available
-        ReplaySubject<KafkaProducer<String, String>> kafkaProducerSubject = ReplaySubject.createWithSize(1);
-
-        availableServer.map(serverAddress -> {
-            // Create a KafkaProducer with the server address
-            Properties props = new Properties();
-            // We add the servers not just the first reachable
-            props.put("bootstrap.servers", bootstrapServers);
-            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            return new KafkaProducer<String, String>(props);
-        }).subscribe(kafkaProducerSubject);
+        Observable<KafkaProducer<String, String>> kafkaProducerSubject = createKafkaProducerObservable(bootstrapServers);
 
         kafkaProducerSubject.subscribe(kafkaProducer -> {
             // Subscribe producers to the devices
@@ -133,5 +110,17 @@ public class App {
 
         thread.start();
         thread.join();
+    }
+
+    public static Observable<KafkaProducer<String, String>> createKafkaProducerObservable(String bootstrapServers) {
+        // Create a Properties for the KafkaProducer
+        Properties props = new Properties();
+        props.put("bootstrap.servers", bootstrapServers);
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+        Completable completable = KafkaServerObservableFactory.waitForServers(bootstrapServers, ClientDnsLookup.USE_ALL_DNS_IPS, 10000, 500);
+
+        return completable.andThen(Observable.fromCallable(()-> new KafkaProducer<String, String>(props)));
     }
 }

@@ -9,6 +9,7 @@ import io.github.zckman.playground.messaging.SmartDevice.Sensor.Fake.FakeSensorF
 import io.github.zckman.playground.messaging.SmartDevice.SmartDevice;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Timed;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -33,38 +34,42 @@ public class App {
         final String topicSensors = dotenv.get("TOPIC_SENSORS");
         final String topicSmartDevices = dotenv.get("TOPIC_SMART_DEVICES");
 
-        Observable<KafkaProducer<String, String>> kafkaProducerSubject = createKafkaProducerObservable(bootstrapServers);
+        // Map devices to JSON
+        ObjectMapper mapper = new ObjectMapper();
+        Observable<JsonNode> devicesJson = deviceListObservable.map(devices -> {
+            // Create JSON like [{id, [keys]}, ...]
+            JsonNode node = mapper.valueToTree(
+                    devices.stream().map(device -> Map.of(device.getId(), device.getSensorKeys())).toList()
+            );
+            return node;
+        });
+        // Flatten all sensors and merge them
+        Observable<Timed<SmartDevice.SensorMeasurement>> readings = Observable.merge(
+                devicesObservable.flatMap(smartDevice -> Observable.fromIterable(smartDevice.getSensors()))
+        );
 
-        kafkaProducerSubject.subscribe(kafkaProducer -> {
-            // Subscribe producers to the devices
-            ObjectMapper mapper = new ObjectMapper();
-            deviceListObservable.map(devices -> {
-                // Create JSON like [{id, [keys]}, ...]
-                JsonNode node = mapper.valueToTree(
-                        devices.stream().map(device -> Map.of(device.getId(), device.getSensorKeys())).toList()
-                );
-                return node;
-            }).subscribe((JsonNode node) -> {
-                String json = mapper.writeValueAsString(node);
+        // Observable of ProducerRecords for different topics (devices and sensor readings)
+        Observable<ProducerRecord<String, String>> kafkaProducerRecords = Observable.merge(
+                devicesJson
+                        .map(mapper::writeValueAsString)
+                        .map(json -> new ProducerRecord<>(topicSmartDevices, "devices", json)),
+                readings.map(sensorMeasurementTimed -> {
+                    SmartDevice.SensorMeasurement measurement = sensorMeasurementTimed.value();
+                    String key = measurement.getDeviceId() + "." + measurement.getKey();
 
-                ProducerRecord<String, String> record = new ProducerRecord<>(topicSmartDevices, "devices", json);
-                kafkaProducer.send(record);
-            });
+                    String json = mapper.writeValueAsString(
+                            Map.of("timestamp", sensorMeasurementTimed.time(), "measurement", measurement)
+                    );
 
-            // Flatten all Sensors and merge them
-            Observable.merge(
-                    devicesObservable.flatMap(smartDevice -> Observable.fromIterable(smartDevice.getSensors()))
-            ).subscribe(sensorMeasurementTimed -> {
-                SmartDevice.SensorMeasurement measurement = sensorMeasurementTimed.value();
-                String key = measurement.getDeviceId() + "." + measurement.getKey();
+                    return new ProducerRecord<>(topicSensors, key, json);
+                })
+        );
 
-                String json = mapper.writeValueAsString(
-                        Map.of("timestamp", sensorMeasurementTimed.time(), "measurement", measurement)
-                );
+        Observable<KafkaProducer<String, String>> kafkaProducerObservable = createKafkaProducerObservable(bootstrapServers);
 
-                ProducerRecord<String, String> record = new ProducerRecord<>(topicSensors, key, json);
-                kafkaProducer.send(record);
-            });
+        // Subscribe producers to records to send them to Kafka
+        kafkaProducerObservable.subscribe(kafkaProducer -> {
+            kafkaProducerRecords.subscribe(kafkaProducer::send);
         });
 
         keepRunning();
@@ -121,6 +126,6 @@ public class App {
 
         Completable completable = KafkaServerObservableFactory.waitForServers(bootstrapServers, ClientDnsLookup.USE_ALL_DNS_IPS, 10000, 500);
 
-        return completable.andThen(Observable.fromCallable(()-> new KafkaProducer<String, String>(props)));
+        return completable.andThen(Observable.fromCallable(() -> new KafkaProducer<String, String>(props)));
     }
 }

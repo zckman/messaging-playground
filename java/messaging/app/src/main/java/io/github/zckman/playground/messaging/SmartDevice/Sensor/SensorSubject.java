@@ -5,7 +5,7 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.Disposable;
 
-public class SensorSubject<T extends Number> extends SensorImpl<T> implements Observer<Measurement<T>> {
+public class SensorSubject<T extends Number> extends SensorImpl<T> implements Observer<Reading<T>> {
 
     /**
      * Provides the {@link Observer} with the means of cancelling (disposing) the
@@ -29,11 +29,11 @@ public class SensorSubject<T extends Number> extends SensorImpl<T> implements Ob
      * The {@code Observable} will not call this method again after it calls either {@link #onComplete} or
      * {@link #onError}.
      *
-     * @param measurement the item emitted by the Observable
+     * @param reading the item emitted by the Observable
      */
     @Override
-    public void onNext(@NonNull Measurement<T> measurement) {
-        emitValue(measurement);
+    public void onNext(@NonNull Reading<T> reading) {
+        emitValue(reading);
     }
 
     /**
@@ -46,7 +46,7 @@ public class SensorSubject<T extends Number> extends SensorImpl<T> implements Ob
      */
     @Override
     public void onError(@NonNull Throwable e) {
-        for (Observer<? super Measurement<T>> observer : observers) {
+        for (Observer<? super Reading<T>> observer : observers) {
             observer.onError(e);
         }
     }
@@ -58,7 +58,7 @@ public class SensorSubject<T extends Number> extends SensorImpl<T> implements Ob
      */
     @Override
     public void onComplete() {
-        for (Observer<? super Measurement<T>> observer : observers) {
+        for (Observer<? super Reading<T>> observer : observers) {
             observer.onComplete();
         }
     }

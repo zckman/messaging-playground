@@ -1,6 +1,6 @@
 package io.github.zckman.playground.messaging.SmartDevice.Sensor;
 
-public interface Measurement<T extends Number> {
+public interface Reading<T extends Number> {
 
     T getValue();
 

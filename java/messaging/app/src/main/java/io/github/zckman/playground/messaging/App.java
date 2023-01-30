@@ -44,7 +44,7 @@ public class App {
             return node;
         });
         // Flatten all sensors and merge them
-        Observable<Timed<SmartDevice.SensorMeasurement>> readings = Observable.merge(
+        Observable<Timed<SmartDevice.SensorReading>> readings = Observable.merge(
                 devicesObservable.flatMap(smartDevice -> Observable.fromIterable(smartDevice.getSensors()))
         );
 
@@ -53,12 +53,12 @@ public class App {
                 devicesJson
                         .map(mapper::writeValueAsString)
                         .map(json -> new ProducerRecord<>(topicSmartDevices, "devices", json)),
-                readings.map(sensorMeasurementTimed -> {
-                    SmartDevice.SensorMeasurement measurement = sensorMeasurementTimed.value();
-                    String key = measurement.getDeviceId() + "." + measurement.getKey();
+                readings.map(sensorReadingTimed -> {
+                    SmartDevice.SensorReading reading = sensorReadingTimed.value();
+                    String key = reading.getDeviceId() + "." + reading.getKey();
 
                     String json = mapper.writeValueAsString(
-                            Map.of("timestamp", sensorMeasurementTimed.time(), "measurement", measurement)
+                            Map.of("timestamp", sensorReadingTimed.time(), "reading", reading)
                     );
 
                     return new ProducerRecord<>(topicSensors, key, json);

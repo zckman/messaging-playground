@@ -7,19 +7,19 @@ import io.reactivex.rxjava3.disposables.Disposable;
 
 import java.util.*;
 
-public class SensorImpl<T extends Number> extends Observable<Measurement<T>> implements Sensor<T> {
+public class SensorImpl<T extends Number> extends Observable<Reading<T>> implements Sensor<T> {
 
-    Measurement<T> lastMeasurement;
+    Reading<T> lastReading;
 
-    final Set<Observer<? super Measurement<T>>> observers = new HashSet<>();
+    final Set<Observer<? super Reading<T>>> observers = new HashSet<>();
 
     @Override
-    public Measurement<T> getLastMeasurement() {
-        return lastMeasurement;
+    public Reading<T> getLastReading() {
+        return lastReading;
     }
 
     @Override
-    protected void subscribeActual(@NonNull Observer<? super Measurement<T>> observer) {
+    protected void subscribeActual(@NonNull Observer<? super Reading<T>> observer) {
 
         Disposable disposable = new Disposable() {
             private boolean disposed = false;
@@ -37,14 +37,14 @@ public class SensorImpl<T extends Number> extends Observable<Measurement<T>> imp
         };
         observers.add(observer);
         observer.onSubscribe(disposable);
-        if (getLastMeasurement() != null && !disposable.isDisposed()) {
-            observer.onNext(getLastMeasurement());
+        if (getLastReading() != null && !disposable.isDisposed()) {
+            observer.onNext(getLastReading());
         }
     }
 
-    public void emitValue(Measurement<T> value) {
-        lastMeasurement = value;
-        for (Observer<? super Measurement<T>> observer : observers) {
+    public void emitValue(Reading<T> value) {
+        lastReading = value;
+        for (Observer<? super Reading<T>> observer : observers) {
             observer.onNext(value);
         }
     }

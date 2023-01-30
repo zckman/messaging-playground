@@ -7,13 +7,13 @@ import io.github.cdimascio.dotenv.DotenvBuilder;
 import io.github.zckman.playground.messaging.Kafka.KafkaServerObservableFactory;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.Fake.FakeSensorFactory;
 import io.github.zckman.playground.messaging.SmartDevice.SmartDevice;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.subjects.ReplaySubject;
+import io.reactivex.rxjava3.schedulers.Timed;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -34,60 +34,42 @@ public class App {
         final String topicSensors = dotenv.get("TOPIC_SENSORS");
         final String topicSmartDevices = dotenv.get("TOPIC_SMART_DEVICES");
 
-        // Create an Observable that emits the address of a Kafka server as soon as it becomes available
-        // We use this Observable to wait until one server is up but will use the original bootstrapServers string later
-        Observable<InetSocketAddress> serverObservable = KafkaServerObservableFactory.create(bootstrapServers, ClientDnsLookup.USE_ALL_DNS_IPS, 1000);
+        // Map devices to JSON
+        ObjectMapper mapper = new ObjectMapper();
+        Observable<JsonNode> devicesJson = deviceListObservable.map(devices -> {
+            // Create JSON like [{id, [keys]}, ...]
+            JsonNode node = mapper.valueToTree(
+                    devices.stream().map(device -> Map.of(device.getId(), device.getSensorKeys())).toList()
+            );
+            return node;
+        });
+        // Flatten all sensors and merge them
+        Observable<Timed<SmartDevice.SensorReading>> readings = Observable.merge(
+                devicesObservable.flatMap(smartDevice -> Observable.fromIterable(smartDevice.getSensors()))
+        );
 
-        // Create a ReplaySubject to always get the latest servers on subscribe
-        ReplaySubject<InetSocketAddress> availableServer = ReplaySubject.createWithSize(1);
-        serverObservable.subscribe(availableServer);
+        // Observable of ProducerRecords for different topics (devices and sensor readings)
+        Observable<ProducerRecord<String, String>> kafkaProducerRecords = Observable.merge(
+                devicesJson
+                        .map(mapper::writeValueAsString)
+                        .map(json -> new ProducerRecord<>(topicSmartDevices, "devices", json)),
+                readings.map(sensorReadingTimed -> {
+                    SmartDevice.SensorReading reading = sensorReadingTimed.value();
+                    String key = reading.getDeviceId() + "." + reading.getKey();
 
-        // Subscribe to the Observable and print the server address when it becomes available
-        availableServer.subscribe(serverAddress -> System.out.println("Kafka server is online: " + serverAddress));
+                    String json = mapper.writeValueAsString(
+                            Map.of("timestamp", sensorReadingTimed.time(), "reading", reading)
+                    );
 
-        // Create and emit a KafkaProducer when Servers are available
-        ReplaySubject<KafkaProducer<String, String>> kafkaProducerSubject = ReplaySubject.createWithSize(1);
+                    return new ProducerRecord<>(topicSensors, key, json);
+                })
+        );
 
-        availableServer.map(serverAddress -> {
-            // Create a KafkaProducer with the server address
-            Properties props = new Properties();
-            // We add the servers not just the first reachable
-            props.put("bootstrap.servers", bootstrapServers);
-            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            return new KafkaProducer<String, String>(props);
-        }).subscribe(kafkaProducerSubject);
+        Observable<KafkaProducer<String, String>> kafkaProducerObservable = createKafkaProducerObservable(bootstrapServers);
 
-        kafkaProducerSubject.subscribe(kafkaProducer -> {
-            // Subscribe producers to the devices
-            ObjectMapper mapper = new ObjectMapper();
-            deviceListObservable.map(devices -> {
-                // Create JSON like [{id, [keys]}, ...]
-                JsonNode node = mapper.valueToTree(
-                        devices.stream().map(device -> Map.of(device.getId(), device.getSensorKeys())).toList()
-                );
-                return node;
-            }).subscribe((JsonNode node) -> {
-                String json = mapper.writeValueAsString(node);
-
-                ProducerRecord<String, String> record = new ProducerRecord<>(topicSmartDevices, "devices", json);
-                kafkaProducer.send(record);
-            });
-
-            // Flatten all Sensors and merge them
-            Observable.merge(
-                    devicesObservable.flatMap(smartDevice -> Observable.fromIterable(smartDevice.getSensors()))
-            ).subscribe(sensorMeasurementTimed -> {
-                SmartDevice.SensorMeasurement measurement = sensorMeasurementTimed.value();
-                String key = measurement.getDeviceId() + "." + measurement.getKey();
-
-                String json = mapper.writeValueAsString(
-                        Map.of("timestamp", sensorMeasurementTimed.time(), "measurement", measurement)
-                );
-
-                ProducerRecord<String, String> record = new ProducerRecord<>(topicSensors, key, json);
-                kafkaProducer.send(record);
-            });
+        // Subscribe producers to records to send them to Kafka
+        kafkaProducerObservable.subscribe(kafkaProducer -> {
+            kafkaProducerRecords.subscribe(kafkaProducer::send);
         });
 
         keepRunning();
@@ -133,5 +115,17 @@ public class App {
 
         thread.start();
         thread.join();
+    }
+
+    public static Observable<KafkaProducer<String, String>> createKafkaProducerObservable(String bootstrapServers) {
+        // Create a Properties for the KafkaProducer
+        Properties props = new Properties();
+        props.put("bootstrap.servers", bootstrapServers);
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+        Completable completable = KafkaServerObservableFactory.waitForServers(bootstrapServers, ClientDnsLookup.USE_ALL_DNS_IPS, 10000, 500);
+
+        return completable.andThen(Observable.fromCallable(() -> new KafkaProducer<String, String>(props)));
     }
 }

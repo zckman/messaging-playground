@@ -3,7 +3,7 @@ package io.github.zckman.playground.messaging.SmartDevice.Sensor.Fake;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import io.github.zckman.playground.messaging.SmartDevice.Sensor.MeasurementImpl;
+import io.github.zckman.playground.messaging.SmartDevice.Sensor.ReadingImpl;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.Sensor;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.SensorSubject;
 import io.reactivex.rxjava3.core.Observable;
@@ -20,9 +20,9 @@ public class FakeSensorFactory {
     }
 
     public static Sensor<Double> createSensor(long interval, TimeUnit timeUnit, double factor, double minimumValue, double maximumValue, String unit) {
-        Observable<MeasurementImpl<Double>> measurement = create(interval, timeUnit, factor, minimumValue, maximumValue).map((Double d) -> new MeasurementImpl<>(d, unit));
+        Observable<ReadingImpl<Double>> readingObservable = create(interval, timeUnit, factor, minimumValue, maximumValue).map((Double d) -> new ReadingImpl<>(d, unit));
         SensorSubject<Double> sensor = new SensorSubject<>();
-        measurement.subscribe(sensor);
+        readingObservable.subscribe(sensor);
         return sensor;
     }
 

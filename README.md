@@ -30,7 +30,7 @@ or
 make up
 ```
 
-This will start the [message broker](https://en.wikipedia.org/wiki/Message_broker), any necessary dependencies and the simulated smart home devices.
+This will start the [message brokers](https://en.wikipedia.org/wiki/Message_broker), any necessary dependencies and the simulated smart home devices.
 
 To stop you can use `docker-compose stop` or `make stop`
 
@@ -38,7 +38,7 @@ To stop you can use `docker-compose stop` or `make stop`
 
 You can interact with the messaging playground using any client that supports the desired messaging protocol. For example, you can use the [Kafka](https://kafka.apache.org/) command-line client to produce and consume messages from the message broker if it is running Apache Kafka.
 
-You can use `make observe` to print the current Devices from the `SmartDevices` topic and start listening for sensor readings.
+You can use `make kafka-observe` to print the current Devices from the `SmartDevices` topic and start listening for sensor readings.
 
 ## Future Development
 

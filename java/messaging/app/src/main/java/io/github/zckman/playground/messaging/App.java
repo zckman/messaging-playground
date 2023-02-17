@@ -31,8 +31,7 @@ public class App {
         Observable<List<SmartDevice>> deviceListObservable = Observable.just(createDevices());
         Observable<SmartDevice> devicesObservable = deviceListObservable.flatMap(Observable::fromIterable);
 
-        // Get the bootstrap servers and topic names
-        final String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");
+        // Get topic names
         final String topicSensors = dotenv.get("TOPIC_SENSORS");
         final String topicSmartDevices = dotenv.get("TOPIC_SMART_DEVICES");
 
@@ -67,7 +66,7 @@ public class App {
                 })
         );
 
-        Observable<KafkaProducer<String, String>> kafkaProducerObservable = createKafkaProducerObservable(bootstrapServers);
+        Observable<KafkaProducer<String, String>> kafkaProducerObservable = createKafkaProducerObservable();
 
         // Subscribe producers to records to send them to Kafka
         kafkaProducerObservable.subscribe(kafkaProducer -> {
@@ -119,7 +118,8 @@ public class App {
         thread.join();
     }
 
-    public static Observable<KafkaProducer<String, String>> createKafkaProducerObservable(String bootstrapServers) {
+    public static Observable<KafkaProducer<String, String>> createKafkaProducerObservable() {
+        final String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");
         // Create a Properties for the KafkaProducer
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrapServers);

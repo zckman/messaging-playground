@@ -21,9 +21,11 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 public class App {
+
+    // Load environment variables from .env file
+    static Dotenv dotenv = (new DotenvBuilder()).ignoreIfMissing().load();
+
     public static void main(String[] args) throws InterruptedException {
-        // Load environment variables from .env file
-        Dotenv dotenv = (new DotenvBuilder()).ignoreIfMissing().load();
 
         // Create some fake devices
         Observable<List<SmartDevice>> deviceListObservable = Observable.just(createDevices());

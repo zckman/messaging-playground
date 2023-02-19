@@ -4,15 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvBuilder;
-import io.github.zckman.playground.messaging.Kafka.KafkaServerObservableFactory;
 import io.github.zckman.playground.messaging.SmartDevice.Sensor.Fake.FakeSensorFactory;
 import io.github.zckman.playground.messaging.SmartDevice.SmartDevice;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Timed;
-import org.apache.kafka.clients.ClientDnsLookup;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,28 +45,6 @@ public class App {
                 devicesObservable.flatMap(smartDevice -> Observable.fromIterable(smartDevice.getSensors()))
         );
 
-        // Observable of ProducerRecords for different topics (devices and sensor readings)
-        Observable<ProducerRecord<String, String>> kafkaProducerRecords = Observable.merge(
-                devicesJson
-                        .map(mapper::writeValueAsString)
-                        .map(json -> new ProducerRecord<>(topicSmartDevices, "devices", json)),
-                readings.map(sensorReadingTimed -> {
-                    SmartDevice.SensorReading reading = sensorReadingTimed.value();
-                    String key = reading.getDeviceId() + "." + reading.getKey();
-
-                    String json = mapper.writeValueAsString(
-                            Map.of("timestamp", sensorReadingTimed.time(), "reading", reading)
-                    );
-
-                    return new ProducerRecord<>(topicSensors, key, json);
-                })
-        );
-
-        Observable<KafkaProducer<String, String>> kafkaProducerObservable = createKafkaProducerObservable();
-
-        // Subscribe producers to records to send them to Kafka
-        kafkaProducerObservable.subscribe(kafkaProducer -> {
-            kafkaProducerRecords.subscribe(kafkaProducer::send);
         });
 
         keepRunning();
@@ -118,16 +92,7 @@ public class App {
         thread.join();
     }
 
-    public static Observable<KafkaProducer<String, String>> createKafkaProducerObservable() {
-        final String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS");
-        // Create a Properties for the KafkaProducer
-        Properties props = new Properties();
-        props.put("bootstrap.servers", bootstrapServers);
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        Completable completable = KafkaServerObservableFactory.waitForServers(bootstrapServers, ClientDnsLookup.USE_ALL_DNS_IPS, 10000, 500);
 
-        return completable.andThen(Observable.fromCallable(() -> new KafkaProducer<String, String>(props)));
     }
 }

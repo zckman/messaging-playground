@@ -30,19 +30,17 @@ or
 make up
 ```
 
-This will start the [message brokers](https://en.wikipedia.org/wiki/Message_broker), any necessary dependencies and the simulated smart home devices.
+This will start the [message broker](https://en.wikipedia.org/wiki/Message_broker), any necessary dependencies and the simulated smart home devices.
 
 To stop you can use `docker-compose stop` or `make stop`
 
 ## Interacting with the Playground
 
-You can interact with the messaging playground using any client that supports the desired messaging protocol. For example, you can use the [Kafka](https://kafka.apache.org/) command-line client to produce and consume messages from the message broker if it is running Apache Kafka.
-
-You can use `make kafka-observe` to print the current Devices from the `SmartDevices` topic and start listening for sensor readings.
+You can interact with the messaging playground using any client that supports the desired messaging protocol.
 
 ## Future Development
 
-In the future, I plan to build a simple client that may interact with Kafkas REST Api.  
+In the future, I plan to build a browser client that will interact with the RabbitMQ api.
 
 
 This project is purely for experimentation and learning purposes and is not intended for practical use.

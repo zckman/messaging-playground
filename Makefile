@@ -26,6 +26,7 @@ rabbitmq: rabbitmq-ready rabbitmq-create-exchanges
 .PHONY: rabbitmq-ready
 rabbitmq-ready:
 	@echo "*** Waiting for rabbitmq startup"
+	@docker-compose exec rabbitmq sh -c 'rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$${HOSTNAME}.pid'
 	@docker-compose exec rabbitmq rabbitmqctl await_startup
 	@docker-compose exec rabbitmq rabbitmq-diagnostics is_running
 

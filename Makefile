@@ -21,7 +21,7 @@ logs:
 	docker-compose logs
 
 .PHONY: rabbitmq
-rabbitmq: rabbitmq-ready rabbitmq-create-exchanges	
+rabbitmq: rabbitmq-ready rabbitmq-plugins rabbitmq-create-exchanges	
 
 .PHONY: rabbitmq-ready
 rabbitmq-ready:
@@ -29,6 +29,12 @@ rabbitmq-ready:
 	@docker-compose exec rabbitmq sh -c 'rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$${HOSTNAME}.pid'
 	@docker-compose exec rabbitmq rabbitmqctl await_startup
 	@docker-compose exec rabbitmq rabbitmq-diagnostics is_running
+
+.PHONY: rabbitmq-plugins
+rabbitmq-plugins: rabbitmq-ready
+	@docker-compose cp ./rabbitmq/config.d/30-rabbitmq_web_mqtt.conf rabbitmq:/etc/rabbitmq/conf.d/
+	@docker-compose exec rabbitmq \
+	rabbitmq-plugins enable rabbitmq_web_mqtt
 
 .PHONY: rabbitmq-create-exchanges
 rabbitmq-create-exchanges: rabbitmq-create-device-exchange rabbitmq-create-sensors-exchange

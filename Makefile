@@ -56,3 +56,15 @@ rabbitmq-create-sensors-exchange:
 	--username=${RABBITMQ_DEFAULT_USER} \
 	--password=${RABBITMQ_DEFAULT_PASS} \
 	declare exchange name="${TOPIC_SENSORS}" type=topic durable=false
+
+build-vite:
+ifneq ($(shell docker-compose ps -q --status "running" vite),)
+	@docker-compose exec vite sh -c "npx vite build"
+else
+	@docker-compose run --rm vite sh -c "npx vite build"
+endif
+
+.PHONY: help
+help:
+	@echo "Client: https://localhost:${CLIENT_HTTPS_PORT}"
+	@echo "Client Vite Dev: https://localhost:${VITE_SERVER_PORT}"
